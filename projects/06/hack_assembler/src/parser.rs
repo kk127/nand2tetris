@@ -1,15 +1,21 @@
-use crate::AsmError;
 use regex::Regex;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
+use thiserror::Error;
+
+#[derive(Error, Debug, PartialEq)]
+pub enum AsmError {
+    #[error("Invalid command type")]
+    InvalidCommandType(String),
+}
 
 #[derive(Debug, PartialEq)]
 enum CommandType {
-    A_COMMAND,
-    C_COMMAND,
-    L_COMMAND,
+    ACommand,
+    CCommand,
+    LCommand,
 }
 
 #[derive(Debug, PartialEq)]
@@ -49,13 +55,16 @@ impl Parser {
         self.index += 1;
     }
 
-    fn command_type(&self) -> CommandType {
+    fn command_type(&self) -> Result<CommandType, AsmError> {
         let re_a = Regex::new(r"^@\d*$|^@[[:alpha:].$:][[:word:].$:]*$").unwrap();
+        let re_l = Regex::new(r"^\(\d*\)$|^\([[:alpha:].$:][[:word:].$:]*\)$").unwrap();
         println!("{}", self.current_command);
         if re_a.is_match(&self.current_command) {
-            return CommandType::A_COMMAND;
+            return Ok(CommandType::ACommand);
+        } else if re_l.is_match(&self.current_command) {
+            return Ok(CommandType::LCommand);
         } else {
-            panic!("command not found")
+            return Err(AsmError::InvalidCommandType("invalid".to_string()));
         }
     }
 }
@@ -105,13 +114,41 @@ mod tests {
     }
 
     #[test]
-    fn test_command_type() {
-        let path = Path::new("./src/input/command.txt");
+    fn test_commandA_type() {
+        let path = Path::new("./src/input/commandA.txt");
         let mut parser = Parser::new(path);
 
         parser.advance();
-        assert_eq!(parser.command_type(), CommandType::A_COMMAND);
+        assert_eq!(parser.command_type(), Ok(CommandType::ACommand));
         parser.advance();
-        assert_eq!(parser.command_type(), CommandType::A_COMMAND);
+        assert_eq!(parser.command_type(), Ok(CommandType::ACommand));
+        parser.advance();
+        assert_eq!(
+            parser.command_type(),
+            Err(AsmError::InvalidCommandType("invalid".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_commandL_type() {
+        let path = Path::new("./src/input/commandL.txt");
+        let mut parser = Parser::new(path);
+
+        parser.advance();
+        assert_eq!(parser.command_type(), Ok(CommandType::LCommand));
+        parser.advance();
+        assert_eq!(parser.command_type(), Ok(CommandType::LCommand));
+        parser.advance();
+        assert_eq!(parser.command_type(), Ok(CommandType::LCommand));
+        parser.advance();
+        assert_eq!(
+            parser.command_type(),
+            Err(AsmError::InvalidCommandType("invalid".to_string()))
+        );
+        parser.advance();
+        assert_eq!(
+            parser.command_type(),
+            Err(AsmError::InvalidCommandType("invalid".to_string()))
+        );
     }
 }
