@@ -1,5 +1,4 @@
 use regex::Regex;
-use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
