@@ -11,11 +11,15 @@ pub enum CommandType {
     LCommand,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct Parser {
     index: usize,
     asm: Vec<String>,
     current_command: String,
+    symbol: String,
+    dest: String,
+    comp: String,
+    jump: String,
 }
 
 impl Parser {
@@ -34,7 +38,7 @@ impl Parser {
         Parser {
             index: 0,
             asm: asm,
-            current_command: "".to_string(),
+            ..Default::default()
         }
     }
 
@@ -48,20 +52,28 @@ impl Parser {
         self.index += 1;
     }
 
-    pub fn command_type(&self) -> Result<CommandType, AsmError> {
+    pub fn command_type(&mut self) -> Result<CommandType, AsmError> {
         let re_a = Regex::new(r"^@\d*$|^@[[:alpha:].$:][[:word:].$:]*$").unwrap();
         let re_l = Regex::new(r"^\(\d*\)$|^\([[:alpha:].$:][[:word:].$:]*\)$").unwrap();
+        let re_c = Regex::new(r"^(M|D|MD|A|AM|AD|AMD)?$").unwrap();
         println!("{}", self.current_command);
         if re_a.is_match(&self.current_command) {
+            let symbol_last_index = self.current_command.len() - 2;
+            self.symbol = self.current_command[1..symbol_last_index].to_string();
             return Ok(CommandType::ACommand);
         } else if re_l.is_match(&self.current_command) {
+            self.symbol = self.current_command[1..].to_string();
             return Ok(CommandType::LCommand);
+        // } else if re_ {
+
+        //     return Ok(CommandType::CCommand);
         } else {
             return Err(AsmError::InvalidCommandType(format!("Invalid Command: {}", &self.current_command)));
         }
     }
 
-    pub fn get_current_command(&self) -> String {
+
+    pub(crate) fn get_current_command(&self) -> String {
         self.current_command.clone()
     }
 }
@@ -78,7 +90,7 @@ mod tests {
         let correct_parser = Parser {
             index: 0,
             asm: vec!["000".to_string(), "111".to_string(), "222".to_string()],
-            current_command: "".to_string(),
+            ..Default::default()
         };
 
         assert_eq!(parser, correct_parser);
@@ -97,9 +109,7 @@ mod tests {
         assert_eq!(parser.has_more_command(), false);
 
         let empty_parser = Parser {
-            index: 0,
-            asm: vec![],
-            current_command: "".to_string(),
+            ..Default::default()
         };
         assert_eq!(empty_parser.has_more_command(), false);
     }
