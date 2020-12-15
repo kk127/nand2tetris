@@ -60,6 +60,10 @@ impl Parser {
             return Err(AsmError::InvalidCommandType(format!("Invalid Command: {}", &self.current_command)));
         }
     }
+
+    pub fn get_current_command(&self) -> String {
+        self.current_command.clone()
+    }
 }
 
 #[cfg(test)]
@@ -83,8 +87,14 @@ mod tests {
     #[test]
     fn test_has_command() {
         let path = Path::new("./src/input/test.txt");
-        let parser = Parser::new(path);
+        let mut parser = Parser::new(path);
         assert_eq!(parser.has_more_command(), true);
+        parser.advance();
+        assert_eq!(parser.has_more_command(), true);
+        parser.advance();
+        assert_eq!(parser.has_more_command(), true);
+        parser.advance();
+        assert_eq!(parser.has_more_command(), false);
 
         let empty_parser = Parser {
             index: 0,
@@ -118,7 +128,7 @@ mod tests {
         parser.advance();
         assert_eq!(
             parser.command_type(),
-            Err(AsmError::InvalidCommandType("invalid".to_string()))
+            Err(AsmError::InvalidCommandType(format!("Invalid Command: {}", parser.get_current_command())))
         );
     }
 
@@ -136,12 +146,12 @@ mod tests {
         parser.advance();
         assert_eq!(
             parser.command_type(),
-            Err(AsmError::InvalidCommandType("invalid".to_string()))
+            Err(AsmError::InvalidCommandType(format!("Invalid Command: {}", parser.get_current_command())))
         );
         parser.advance();
         assert_eq!(
             parser.command_type(),
-            Err(AsmError::InvalidCommandType("invalid".to_string()))
+            Err(AsmError::InvalidCommandType(format!("Invalid Command: {}", parser.get_current_command())))
         );
     }
 }
