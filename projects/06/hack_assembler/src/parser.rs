@@ -2,23 +2,17 @@ use regex::Regex;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
-use thiserror::Error;
-
-#[derive(Error, Debug, PartialEq)]
-pub enum AsmError {
-    #[error("Invalid command type")]
-    InvalidCommandType(String),
-}
+use crate::error::AsmError;
 
 #[derive(Debug, PartialEq)]
-enum CommandType {
+pub enum CommandType {
     ACommand,
     CCommand,
     LCommand,
 }
 
 #[derive(Debug, PartialEq)]
-struct Parser {
+pub struct Parser {
     index: usize,
     asm: Vec<String>,
     current_command: String,
@@ -26,14 +20,14 @@ struct Parser {
 
 impl Parser {
     // コンストラクタ
-    fn new(path: &Path) -> Self {
+    pub fn new(path: &Path) -> Self {
         // ファイル読み込み
 
         let mut asm = Vec::new();
-        let file = File::open(path).expect("cann't open file");
+        let file = File::open(path).expect("can't open file");
         let buffer = BufReader::new(file);
         for line in buffer.lines() {
-            let read_line = line.expect("cann't read line");
+            let read_line = line.expect("can't read line");
             asm.push(read_line)
         }
 
@@ -45,16 +39,16 @@ impl Parser {
     }
 
     // 入力にコマンドが存在するか
-    fn has_more_command(&self) -> bool {
+    pub fn has_more_command(&self) -> bool {
         self.index < self.asm.len()
     }
 
-    fn advance(&mut self) {
+    pub fn advance(&mut self) {
         self.current_command = self.asm[self.index].clone();
         self.index += 1;
     }
 
-    fn command_type(&self) -> Result<CommandType, AsmError> {
+    pub fn command_type(&self) -> Result<CommandType, AsmError> {
         let re_a = Regex::new(r"^@\d*$|^@[[:alpha:].$:][[:word:].$:]*$").unwrap();
         let re_l = Regex::new(r"^\(\d*\)$|^\([[:alpha:].$:][[:word:].$:]*\)$").unwrap();
         println!("{}", self.current_command);
@@ -63,7 +57,7 @@ impl Parser {
         } else if re_l.is_match(&self.current_command) {
             return Ok(CommandType::LCommand);
         } else {
-            return Err(AsmError::InvalidCommandType("invalid".to_string()));
+            return Err(AsmError::InvalidCommandType(format!("Invalid Command: {}", &self.current_command)));
         }
     }
 }
@@ -113,7 +107,7 @@ mod tests {
     }
 
     #[test]
-    fn test_commandA_type() {
+    fn test_command_a_type() {
         let path = Path::new("./src/input/commandA.txt");
         let mut parser = Parser::new(path);
 
@@ -129,7 +123,7 @@ mod tests {
     }
 
     #[test]
-    fn test_commandL_type() {
+    fn test_command_l_type() {
         let path = Path::new("./src/input/commandL.txt");
         let mut parser = Parser::new(path);
 
